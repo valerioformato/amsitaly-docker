@@ -1,4 +1,4 @@
-FROM cern/c8-base
+FROM cern/cc7-base
 
 MAINTAINER Valerio Formato valerio.formato@cern.ch
 
@@ -7,7 +7,7 @@ ENV AMS_USER="amsuser"
 ENV AMS_USER_HOME="/home/amsuser"
 
 #--- Patch yum for docker
-# RUN yum install -y yum-plugin-ovl
+RUN yum install -y yum-plugin-ovl
 
 #--- make sure FUSE can be enabled
 RUN if [[ ! -e /dev/fuse ]]; then mknod -m 666 /dev/fuse c 10 229; fi
@@ -20,12 +20,12 @@ RUN yum update -y; yum clean all
 RUN yum -y install \
     cvmfs cvmfs-init-scripts cvmfs-auto-setup doxygen \
     freetype fuse sudo glibc-devel glibc-headers libstdc++-devel \
-    man nano emacs openssh-server openssh-clients openssl-devel libXext libXpm \
+    man nano emacs openssh-server openssl098e libXext libXpm \
     git gsl-devel freetype-devel libSM libX11-devel libXext-devel make gcc-c++ \
     gcc binutils libXpm-devel libXft-devel boost-devel blas.x86_64 \
-    cmake ncurses ncurses-devel python2 python3 python2-devel python3-devel \
-    patch; \
+    cmake ncurses ncurses-devel xrootd xrootd-client; \
     yum clean all
+RUN yum install -y cvs openssh-clients
 
 WORKDIR /root
 
@@ -46,12 +46,9 @@ RUN echo "ams.cern.ch         /cvmfs/ams.cern.ch cvmfs defaults 0 0" >> /etc/fst
 
 # Setting up a user
 RUN adduser $AMS_USER -d $AMS_USER_HOME && echo "$AMS_USER:ams" | chpasswd && \
-    echo "$AMS_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers 
-
+    echo "$AMS_USER ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$AMS_USER && \
+    chmod 0440 /etc/sudoers.d/$AMS_USER
 RUN chown -R $AMS_USER $AMS_USER_HOME
-
-ADD baseenv.sh  $AMS_USER_HOME
-RUN chown -R $AMS_USER $AMS_USER_HOME/baseenv.sh
 
 # ADD setup_amsenv.sh  $AMS_USER_HOME
 # RUN chown -R $AMS_USER $AMS_USER_HOME/setup_amsenv.sh
